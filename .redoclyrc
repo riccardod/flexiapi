@@ -1,0 +1,7 @@
+
+apiTitle: flexipayapi
+splitSpec: false
+codeSamples: true
+swaggerUI: true
+travis: false
+oasVersion: 3.0.0
