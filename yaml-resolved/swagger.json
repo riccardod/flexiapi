@@ -1,0 +1,432 @@
+---
+swagger: "2.0"
+info:
+  description: |-
+    The FlexiPay RESTful API allows you to have complete control over your shopping cart or other integrations. Using this API requires you to handle sensitive credit card data which means you should meet all appropriate PCI compliance requirements before using.
+
+    ## Authorization
+
+    Add your API token to the Authorization header, ex:
+
+    **Authorization: Bearer {API token}**
+
+    Your token can be retrieved in your dashboard:
+
+    **https://app.flexipay.cc/integrations**
+
+    ## Testing
+
+    To test the API, use host/base URL **https://api.flexipay.cc/api/test** and add the endpoint required to the end of the URL (currently only the _/transactions_ endpoint exists).
+
+    While testing, you may use your production key located here: https://api.flexipay.cc/integrations or use the testing token:
+
+    **9hGAGfIJBCaRDrhxsBim9Z2Ty5n8f1**
+
+    Only posting and refunding transactions currently works on the test API. You may also use Apiary's Mock server as it returns expected values, and does not require an authorization token.
+
+    ## Troubleshooting
+
+    If you having issues with the API, please add the following URL to [Postman](https://getpostman.com) to aid in your diagnosis:
+
+    https://www.gatewayfinity.com/wp-content/uploads/2019/GatewayFinity.postman_collection.json
+
+    The API collection includes all those listed below, plus the testing URLs for Creating and Refunding transactions.
+  version: "1.0"
+  title: FlexiPay API
+  contact: {}
+host: app.gatewayfinity.com
+basePath: /api/v1
+tags: []
+schemes:
+- https
+consumes:
+- application/json
+produces:
+- application/json
+paths:
+  /transactions:
+    get:
+      summary: List All Transactions
+      description: ""
+      operationId: TransactionsGet
+      produces:
+      - application/json
+      parameters: []
+      responses:
+        200:
+          description: ""
+          headers: {}
+          schema:
+            type: object
+      security:
+      - auth: []
+    post:
+      summary: Create a New Transaction
+      description: |-
+        Requires an active credit card MID that allows use of the API. Please see your MIDs page for more details. If you have multiple assigned MIDs, you must specifiy which MID to use by passing the MID number with the "mid" parameter.
+        **Note**: for testing, use the test API URL **https://api.flexipay.cc/api/test/transactions**, use VISA _4111111111111111_ with a future date for expiry to test for a successful transaction, VISA _4012888888881881_ to test for declines.
+      operationId: TransactionsPost
+      produces:
+      - application/json
+      parameters:
+      - name: Content-Type
+        in: header
+        description: ""
+        required: true
+        type: string
+      - name: Accepts
+        in: header
+        description: ""
+        required: true
+        type: string
+      - in: body
+        name: body
+        description: ""
+        required: true
+        schema:
+          $ref: '#/definitions/CreateaNewTransactionrequest'
+      responses:
+        200:
+          description: ""
+          examples:
+            application/json:
+              number: 181128762951
+              amount: 10
+              descriptor: SomethingLLC
+              currency: USD
+              mid: 12345
+              orderNumber: ABCD1234
+              status: P
+              message: Something important
+              created_at: 2018-11-28 21:51:30
+          headers: {}
+          schema:
+            $ref: '#/definitions/CreateaNewTransactionresponse'
+        401:
+          description: You did not authenticate your API token or do not have an active bank attached to your account.
+          schema: {}
+        422:
+          description: Unexpected error in API call. See HTTP response body for details.
+          examples:
+            application/json:
+              cardNumber:
+              - The card number is not a valid credit card number.
+              csv:
+              - The csv field is required.
+          schema:
+            $ref: '#/definitions/CreateaNewTransaction422response'
+      security:
+      - auth: []
+  /transactions/{transaction_id}:
+    get:
+      summary: Get Transaction Details
+      description: ""
+      operationId: TransactionsByTransactionIdGet
+      produces:
+      - application/json
+      parameters:
+      - name: transaction_id
+        in: path
+        description: ""
+        required: true
+        type: string
+      responses:
+        200:
+          description: ""
+          examples:
+            application/json:
+              number: "190103763593"
+              amount: 1
+              currency: USD
+              mid: "84864"
+              descriptor: Credit Card Statement Description
+              order_number: TEST-2951512
+              status: C
+              created_at: 2019-01-03 19:54:03
+          headers: {}
+          schema:
+            $ref: '#/definitions/GetTransactionDetailsresponse'
+      security:
+      - auth: []
+    put:
+      summary: Refund a transaction
+      description: ""
+      operationId: TransactionsByTransactionIdPut
+      produces:
+      - application/json
+      parameters:
+      - name: transaction_id
+        in: path
+        description: ""
+        required: true
+        type: string
+      responses:
+        200:
+          description: ""
+          examples:
+            application/json:
+              number: 181128762951
+              amount: 10
+              currency: USD
+              mid: 12345
+              descriptor: TestDescriptor18008974567
+              orderNumber: ABCD1234
+              status: R
+              message: Something important
+              created_at: 2018-11-28 21:51:30
+              updated_at: 2019-01-03 19:54:03
+          headers: {}
+          schema:
+            $ref: '#/definitions/Refundatransactionresponse'
+        401:
+          description: You did not authenticate your API token or supplied an incorrect transaction id.
+          schema: {}
+      security:
+      - auth: []
+securityDefinitions:
+  auth:
+    type: oauth2
+    authorizationUrl: https://api.flexipay.cc/api/v1
+    flow: implicit
+    scopes: {}
+definitions:
+  GetTransactionDetailsresponse:
+    type: object
+    required:
+    - amount
+    - created_at
+    - currency
+    - descriptor
+    - mid
+    - number
+    - order_number
+    - status
+    properties:
+      number:
+        type: string
+      amount:
+        type: integer
+        format: int32
+      currency:
+        type: string
+      mid:
+        type: string
+      descriptor:
+        type: string
+      order_number:
+        type: string
+      status:
+        type: string
+      message:
+        type: string
+      created_at:
+        type: string
+    title: GetTransactionDetailsresponse
+    example:
+      number: "190103763593"
+      amount: 1
+      currency: USD
+      mid: "84864"
+      descriptor: Credit Card Statement Description
+      order_number: TEST-2951512
+      status: C
+      created_at: 2019-01-03 19:54:03
+  CreateaNewTransactionrequest:
+    type: object
+    required:
+    - address
+    - amount
+    - cardNumber
+    - city
+    - country
+    - csv
+    - currency
+    - email
+    - expiryMonth
+    - expiryYear
+    - firstName
+    - ip
+    - lastName
+    - mid
+    - orderNumber
+    - phone
+    - postal
+    - state
+    properties:
+      mid:
+        type: integer
+        format: int32
+      amount:
+        type: number
+        format: double
+      currency:
+        type: integer
+        format: int32
+      cardNumber:
+        type: integer
+        format: int64
+      expiryMonth:
+        type: integer
+        format: int32
+      expiryYear:
+        type: integer
+        format: int32
+      csv:
+        type: integer
+        format: int32
+      orderNumber:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      email:
+        type: string
+      phone:
+        type: string
+      country:
+        type: string
+      address:
+        type: string
+      city:
+        type: string
+      state:
+        type: string
+      postal:
+        type: string
+      ip:
+        type: string
+    title: CreateaNewTransactionrequest
+    example:
+      mid: 12345
+      amount: 10
+      currency: 1
+      cardNumber: 4111111111111111
+      expiryMonth: 12
+      expiryYear: 2019
+      csv: 123
+      orderNumber: ABCD1234
+      firstName: John
+      lastName: Smith
+      email: johnsmith@mail.com
+      phone: 1-416-555-1212
+      country: US
+      address: 123 Main St.
+      city: Somewhere
+      state: NY
+      postal: "12345"
+      ip: 192.168.0.1
+  CreateaNewTransactionresponse:
+    type: object
+    required:
+    - amount
+    - created_at
+    - currency
+    - descriptor
+    - message
+    - mid
+    - number
+    - orderNumber
+    - status
+    properties:
+      number:
+        type: integer
+        format: int64
+      amount:
+        type: number
+        format: double
+      descriptor:
+        type: string
+      currency:
+        type: string
+      mid:
+        type: integer
+        format: int32
+      orderNumber:
+        type: string
+      status:
+        type: string
+      message:
+        type: string
+      created_at:
+        type: string
+    title: CreateaNewTransactionresponse
+    example:
+      number: 181128762951
+      amount: 10
+      descriptor: SomethingLLC
+      currency: USD
+      mid: 12345
+      orderNumber: ABCD1234
+      status: P
+      message: Something important
+      created_at: 2018-11-28 21:51:30
+  CreateaNewTransaction422response:
+    type: object
+    required:
+    - cardNumber
+    - csv
+    properties:
+      cardNumber:
+        type: array
+        items:
+          type: string
+      csv:
+        type: array
+        items:
+          type: string
+    title: CreateaNewTransaction422response
+    example:
+      cardNumber:
+      - The card number is not a valid credit card number.
+      csv:
+      - The csv field is required.
+  Refundatransactionresponse:
+    type: object
+    required:
+    - amount
+    - created_at
+    - currency
+    - descriptor
+    - message
+    - mid
+    - number
+    - orderNumber
+    - status
+    - updated_at
+    properties:
+      number:
+        type: integer
+        format: int64
+      amount:
+        type: number
+        format: double
+      currency:
+        type: string
+      mid:
+        type: integer
+        format: int32
+      descriptor:
+        type: string
+      orderNumber:
+        type: string
+      status:
+        type: string
+      message:
+        type: string
+      created_at:
+        type: string
+      updated_at:
+        type: string
+    title: Refundatransactionresponse
+    example:
+      number: 181128762951
+      amount: 10
+      currency: USD
+      mid: 12345
+      descriptor: TestDescriptor18008974567
+      orderNumber: ABCD1234
+      status: R
+      message: Something important
+      created_at: 2018-11-28 21:51:30
+      updated_at: 2019-01-03 19:54:03
